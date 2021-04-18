@@ -6,10 +6,10 @@ put melons in a shopping cart.
 Authors: Joel Burton, Christian Fernandez, Meggie Mahnken, Katie Byers.
 """
 
-from flask import Flask, render_template, redirect, flash, session
+from flask import Flask, render_template, redirect, flash, session,request
 import jinja2
 
-import melons
+import melons,customers
 
 app = Flask(__name__)
 
@@ -128,6 +128,7 @@ def add_to_cart(melon_id):
 
     if "cart" not in session:
         session["cart"] = {}
+        session["cart"][melon_id] = count
     else:
         session["cart"][melon_id] = count
     
@@ -164,7 +165,22 @@ def process_login():
     # - if they don't, flash a failure message and redirect back to "/login"
     # - do the same if a Customer with that email doesn't exist
 
-    return "Oops! This needs to be implemented"
+    email = request.form.get('email')
+    password = request.form.get('password')
+    try:
+        customer = customers.get_by_email(email)
+    except:
+        flash("No customer found with that email id!")
+        return redirect("/login")
+    if customer.email in customers.email_lookup:
+        if hash(password) == customer.password:
+            session['logged_in_customer_email'] = customer.email
+            flash("Login successful!")
+            return redirect("/melons")
+        else:
+            flash("Incorrect password!")
+            return redirect("/login")
+        
 
 
 @app.route("/checkout")
@@ -176,6 +192,22 @@ def checkout():
 
     flash("Sorry! Checkout will be implemented in a future version.")
     return redirect("/melons")
+
+@app.route("/logout")
+def process_logout():
+    """Log your customer out"""
+
+    del session['logged_in_customer_email']
+    del session['cart']
+    flash('Logged out successfully!')
+    return redirect("/melons")
+
+@app.route("/clear_cart")
+def clear_cart():
+    """Empty the current cart."""
+
+    del session['cart']
+    return redirect("/cart")
 
 
 if __name__ == "__main__":
