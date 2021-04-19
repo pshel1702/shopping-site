@@ -198,7 +198,8 @@ def process_logout():
     """Log your customer out"""
 
     del session['logged_in_customer_email']
-    del session['cart']
+    if "cart" in session:
+        del session['cart']
     flash('Logged out successfully!')
     return redirect("/melons")
 
